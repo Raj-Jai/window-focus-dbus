@@ -1,0 +1,8 @@
+{
+  "name": "Window Focus D-Bus",
+  "description": "Exposes the focused window wm_class and title via D-Bus for external tools (e.g. dashboard, home automation)",
+  "uuid": "window-focus-dbus@jairaj.dev",
+  "shell-version": ["45", "46", "47"],
+  "version": 1,
+  "url": "https://github.com/Raj-Jai/window-focus-dbus"
+}
