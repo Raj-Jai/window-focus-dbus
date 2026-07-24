@@ -25,9 +25,11 @@ export default class WindowFocusExtension extends Extension {
         this._dbusConnection = null;
         this._dbusId = 0;
         this._focusId = 0;
+        this._titleSignalId = 0;
+        this._trackedWindow = null;
 
         this._focusId = global.display.connect('notify::focus-window', () => {
-            this._updateFocus();
+            this._onFocusChanged();
         });
 
         const ifaceInfo = Gio.DBusNodeInfo.new_for_xml(IFACE_XML).interfaces[0];
@@ -55,10 +57,11 @@ export default class WindowFocusExtension extends Extension {
             () => log('WindowFocus: name lost')
         );
 
-        this._updateFocus();
+        this._onFocusChanged();
     }
 
     disable() {
+        this._cleanupTitleSignal();
         if (this._focusId) {
             global.display.disconnect(this._focusId);
             this._focusId = 0;
@@ -72,6 +75,30 @@ export default class WindowFocusExtension extends Extension {
             this._busOwnerId = 0;
         }
         this._dbusConnection = null;
+    }
+
+    _onFocusChanged() {
+        this._cleanupTitleSignal();
+        this._updateFocus();
+        const win = global.display.focus_window;
+        if (win) {
+            this._trackedWindow = win;
+            this._titleSignalId = win.connect('notify::title', () => {
+                this._updateFocus();
+            });
+        }
+    }
+
+    _cleanupTitleSignal() {
+        if (this._titleSignalId && this._trackedWindow) {
+            try {
+                this._trackedWindow.disconnect(this._titleSignalId);
+            } catch (e) {
+                // window may already be destroyed
+            }
+        }
+        this._titleSignalId = 0;
+        this._trackedWindow = null;
     }
 
     _updateFocus() {
